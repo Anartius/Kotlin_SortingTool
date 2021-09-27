@@ -5,11 +5,28 @@ import java.util.*
 val scanner = Scanner(System.`in`)
 
 fun main(args: Array<String>) {
-    when(args[args.lastIndex]) {
-        "long" -> numbers()
-        "line" -> line()
-        else -> words()
+    if (args.contains("-sortIntegers")) {
+        sortIntegers()
+    } else {
+        when (args[args.lastIndex]) {
+            "long" -> numbers()
+            "line" -> line()
+            else -> words()
+        }
     }
+}
+
+fun sortIntegers() {
+    val inputData = mutableListOf<Int>()
+
+    while (scanner.hasNextInt()) {
+        inputData.add(scanner.nextInt())
+    }
+
+    println("""
+        Total numbers: ${inputData.size}.
+        Sorted data: ${inputData.sorted().joinToString(" ")}
+        """.trimIndent())
 }
 
 fun numbers() {
@@ -62,3 +79,4 @@ fun words() {
 fun percent(quantity: Int, total: Int) : Int {
     return total * 100 / quantity
 }
+
