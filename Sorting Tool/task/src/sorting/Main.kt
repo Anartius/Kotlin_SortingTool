@@ -1,30 +1,64 @@
 package sorting
 
+import java.lang.IndexOutOfBoundsException
+import java.lang.NumberFormatException
 import java.math.BigDecimal
 import java.util.*
 
 val scanner = Scanner(System.`in`)
 
 fun main(args: Array<String>) {
+    val paramList = listOf("java", "SortingTool", "-dataType", "long", "word", "line",
+        "-sortingType", "natural", "byCount")
+    val wrongArgs = args.filter { !paramList.contains(it) }.toList()
+    val arguments = args.filter { paramList.contains(it) }.toList()
+    wrongArgs.forEach { println("\"$it\" is not a valid parameter. It will be skipped.") }
+    var arg: String
+    val sortingType = if (arguments.contains("-sortingType")) {
+        try {
+            arg = arguments[arguments.indexOf("-sortingType") + 1]
 
-    var sortingType = "natural"
-    if (args.contains("-sortingType")) {
-        sortingType = args[args.indexOf("-sortingType") + 1]
+            if (arg == "natural" || arg == "byCount") {
+                arguments[arguments.indexOf("-sortingType") + 1]
+            } else {
+                println("No sorting type defined!")
+                return
+            }
+        } catch (e: IndexOutOfBoundsException) {
+            print("No sorting type defined!")
+            return
+        }
+    } else "natural"
+
+    try {
+        arg = arguments[arguments.indexOf("-dataType") + 1]
+    } catch (e: IndexOutOfBoundsException) {
+        println("No data type defined!")
+        return
     }
 
-    when (args[args.indexOf("-dataType") + 1]) {
-        "long" -> numbers(sortingType)
-        "line" -> line(sortingType)
-        else -> words(sortingType)
+    when (arg) {
+        "long" -> numbersSort(sortingType)
+        "line" -> linesSort(sortingType)
+        "word" -> wordsSort(sortingType)
+        else -> {
+            println("No data type defined!")
+            return
+        }
     }
 
 }
 
-fun numbers(sortingType: String) {
+fun numbersSort(sortingType: String) {
     val inputData = mutableListOf<Int>()
-
-    while (scanner.hasNextInt()) {
-        inputData.add(scanner.nextInt())
+    var item: String
+    while (scanner.hasNext()) {
+        item = scanner.next()
+        try{
+            inputData.add(item.toInt())
+        } catch (e: NumberFormatException) {
+            println("\"$item\" is not a long. It will be skipped.")
+        }
     }
     println("Total numbers: ${inputData.size}.")
     inputData.sort()
@@ -48,7 +82,7 @@ fun numbers(sortingType: String) {
     }
 }
 
-fun line(sortingType: String) {
+fun linesSort(sortingType: String) {
     val inputData = mutableListOf<String>()
     while (scanner.hasNextLine()) {
         inputData.add(scanner.nextLine())
@@ -76,7 +110,7 @@ fun line(sortingType: String) {
     }
 }
 
-fun words(sortingType: String) {
+fun wordsSort(sortingType: String) {
 
     val inputData = mutableListOf<String>()
 
