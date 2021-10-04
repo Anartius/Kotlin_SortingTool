@@ -1,5 +1,6 @@
 package sorting
 
+import java.io.File
 import java.lang.IndexOutOfBoundsException
 import java.lang.NumberFormatException
 import java.math.BigDecimal
@@ -8,15 +9,28 @@ import java.util.*
 val scanner = Scanner(System.`in`)
 
 fun main(args: Array<String>) {
-    val paramList = listOf("java", "SortingTool", "-dataType", "long", "word", "line",
-        "-sortingType", "natural", "byCount")
+    val paramList = mutableListOf("java", "SortingTool", "-dataType", "long", "word", "line",
+        "-sortingType", "natural", "byCount", "-inputFile", "-outputFile")
+
+    var inFileName = ""
+    var outFileName = ""
+    if (args.contains("-inputFile")) {
+        inFileName = args[args.indexOf("-inputFile") + 1]
+        paramList.add(inFileName)
+    }
+    if (args.contains("-outputFile")) {
+        outFileName = args[args.indexOf("-outputFile") + 1]
+        paramList.add(outFileName)
+    }
+
     val wrongArgs = args.filter { !paramList.contains(it) }.toList()
     val arguments = args.filter { paramList.contains(it) }.toList()
+
     wrongArgs.forEach { println("\"$it\" is not a valid parameter. It will be skipped.") }
-    var arg: String
+
     val sortingType = if (arguments.contains("-sortingType")) {
         try {
-            arg = arguments[arguments.indexOf("-sortingType") + 1]
+            val arg = arguments[arguments.indexOf("-sortingType") + 1]
 
             if (arg == "natural" || arg == "byCount") {
                 arguments[arguments.indexOf("-sortingType") + 1]
@@ -30,41 +44,51 @@ fun main(args: Array<String>) {
         }
     } else "natural"
 
-    try {
-        arg = arguments[arguments.indexOf("-dataType") + 1]
+    val dataType = try {
+        arguments[arguments.indexOf("-dataType") + 1]
     } catch (e: IndexOutOfBoundsException) {
         println("No data type defined!")
         return
     }
+    if (outFileName.isNotEmpty()) File(outFileName).writeText("")
 
-    when (arg) {
-        "long" -> numbersSort(sortingType)
-        "line" -> linesSort(sortingType)
-        "word" -> wordsSort(sortingType)
+    when (dataType) {
+        "long" -> numbersSort(sortingType, inFileName, outFileName)
+        "word" -> wordsSort(sortingType, inFileName, outFileName)
+        "line" -> linesSort(sortingType, inFileName, outFileName)
         else -> {
             println("No data type defined!")
             return
         }
     }
-
 }
 
-fun numbersSort(sortingType: String) {
+fun numbersSort(sortingType: String, inFileName: String, outFileName: String) {
+    val inData = mutableListOf<String>()
     val inputData = mutableListOf<Int>()
-    var item: String
-    while (scanner.hasNext()) {
-        item = scanner.next()
-        try{
-            inputData.add(item.toInt())
-        } catch (e: NumberFormatException) {
-            println("\"$item\" is not a long. It will be skipped.")
+    val resultList = mutableListOf<String>()
+
+    if (inFileName.isNotEmpty()) {
+        inData.addAll(File(inFileName).readText().split(" ").toList())
+    } else {
+        while (scanner.hasNext()) {
+            inData.add(scanner.next())
         }
     }
-    println("Total numbers: ${inputData.size}.")
+
+    inData.forEach {
+        try {
+            inputData.add(it.toInt())
+        } catch (e: NumberFormatException) {
+            println("\"$it\" is not a long. It will be skipped.")
+        }
+    }
     inputData.sort()
 
+    resultList.add("Total numbers: ${inputData.size}.")
+
     if (sortingType == "natural") {
-        println("Sorted data: ${inputData.joinToString(" ")}")
+        resultList.add("Sorted data: ${inputData.joinToString(" ")}")
     } else {
         val intMap = mutableMapOf<Int, Int> ()
 
@@ -78,22 +102,64 @@ fun numbersSort(sortingType: String) {
         intMap.entries.sortedBy { it.value }.forEach { sortedMap[it.key] = it.value }
 
         sortedMap.forEach {
-                (k, v) -> println("$k: $v time(s), ${percent(inputData.size,v)}%") }
+                (k, v) -> resultList.add("$k: $v time(s), ${percent(inputData.size,v)}%")}
     }
+
+    output(resultList, outFileName)
 }
 
-fun linesSort(sortingType: String) {
+fun wordsSort(sortingType: String, inFileName: String, outFileName: String) {
+    val inData = mutableListOf<String>()
     val inputData = mutableListOf<String>()
-    while (scanner.hasNextLine()) {
-        inputData.add(scanner.nextLine())
-    }
+    val resultList = mutableListOf<String>()
 
-    println("Total lines: ${inputData.size}.")
-    val sortedList = inputData.sorted()
+    if (inFileName.isNotEmpty()) {
+        inData.addAll(File(inFileName).readText().split(" ").toList())
+    } else {
+        while (scanner.hasNext()) {
+            inputData.add(scanner.next())
+        }
+    }
+    inputData.sort()
+    resultList.add("Total words: ${inputData.size}.")
 
     if (sortingType == "natural") {
-        println("Sorted data:")
-        sortedList.forEach { println(it) }
+        resultList.add("Sorted data: ${inputData.joinToString(" ")}")
+    } else {
+        val wordsMap = mutableMapOf<String, Int>()
+        for (elem in inputData) {
+            if (!wordsMap.containsKey(elem)) {
+                wordsMap[elem] = inputData.count { it == elem }
+            }
+        }
+        val sortedMap = mutableMapOf<String, Int>()
+        wordsMap.entries.sortedBy { it.value }.forEach { sortedMap[it.key] = it.value }
+        sortedMap.forEach {
+                (k, v) -> resultList.add("$k: $v time(s), ${percent(inputData.size, v)}%") }
+    }
+
+    output(resultList, outFileName)
+}
+
+fun linesSort(sortingType: String, inFileName: String, outFileName: String) {
+    val inData = mutableListOf<String>()
+    val inputData = mutableListOf<String>()
+    val resultList = mutableListOf<String>()
+
+    if (inFileName.isNotEmpty()) {
+        inData.addAll(File(inFileName).readLines().toList())
+    } else {
+        while (scanner.hasNextLine()) {
+            inputData.add(scanner.nextLine())
+        }
+    }
+    val sortedList = inputData.sorted()
+
+    resultList.add("Total lines: ${inputData.size}.")
+
+    if (sortingType == "natural") {
+        resultList.add("Sorted data:")
+        resultList.addAll(sortedList)
     } else {
         val linesMap = mutableMapOf<String, Int>()
 
@@ -106,36 +172,18 @@ fun linesSort(sortingType: String) {
         val sortedMap = mutableMapOf<String, Int>()
         linesMap.entries.sortedBy { it.value }.forEach { sortedMap[it.key] = it.value }
         sortedMap.forEach {
-                (k, v) -> println("$k: $v time(s), ${percent(sortedList.size, v)}%") }
+                (k, v) -> resultList.add("$k: $v time(s), ${percent(sortedList.size, v)}%") }
     }
-}
 
-fun wordsSort(sortingType: String) {
-
-    val inputData = mutableListOf<String>()
-
-    while (scanner.hasNext()) {
-        inputData.add(scanner.next())
-    }
-    println("Total words: ${inputData.size}.")
-    inputData.sort()
-
-    if (sortingType == "natural") {
-        println("Sorted data: ${inputData.joinToString(" ")}")
-    } else {
-        val wordsMap = mutableMapOf<String, Int>()
-        for (elem in inputData) {
-            if (!wordsMap.containsKey(elem)) {
-                wordsMap[elem] = inputData.count { it == elem }
-            }
-        }
-        val sortedMap = mutableMapOf<String, Int>()
-        wordsMap.entries.sortedBy { it.value }.forEach { sortedMap[it.key] = it.value }
-        sortedMap.forEach {
-                (k, v) -> println("$k: $v time(s), ${percent(inputData.size, v)}%") }
-    }
+    output(resultList, outFileName)
 }
 
 fun percent(total: Int, quantity: Int) : Int {
     return (quantity.toBigDecimal() * BigDecimal(100) / total.toBigDecimal()).toInt()
+}
+
+fun output(resultList: MutableList<String>, outFileName: String) {
+    if (outFileName.isNotEmpty()) {
+        File(outFileName).writeText(resultList.joinToString("\n"))
+    } else println(resultList.joinToString("\n"))
 }
